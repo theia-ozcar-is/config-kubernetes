@@ -1,0 +1,14 @@
+namePrefix:
+  - path: spec/routes/middlewares/name
+  - path: spec/routes/services/name
+
+varReference:
+- path: data
+  kind: ConfigMap
+- path: spec/routes/match
+  kind: IngressRoute
+- path: spec/routes/services/name
+  kind: IngressRoute
+- path: spec/stripPrefix/prefixes
+  kind: Middleware
+

@@ -1,0 +1,52 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mongo-backup-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  volumeMode: Filesystem
+  volumeName: theia-mongo-dump
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: mongo-dump
+  namespace: theia
+spec:
+  schedule: "00 02 * * * "
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            role: mongo-dump
+        spec:
+          containers:
+          - name: mongo-dump
+            env:
+            - name: MONGODB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secret-mongo
+                  key: "uri"
+            image: mongo:4.4
+            command: ["/bin/sh", "-c"]
+            args: ["mongodump --archive='/backup/dump.gz' --gzip --uri $(MONGODB_URL)"]
+            volumeMounts:
+            - name: mongo-backup
+              mountPath: /backup/
+          volumes:
+          - name: mongo-backup
+            persistentVolumeClaim:
+              claimName: mongo-backup-claim
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 999
+
+ 

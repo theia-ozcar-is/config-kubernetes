@@ -1,0 +1,70 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: open-elevation-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 32Gi
+  volumeMode: Filesystem
+  volumeName: theia-elevation-dem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-elevation
+  labels:
+    tier: backend
+    role: open-elevation
+spec:
+  selector:
+    matchLabels:
+      tier: backend
+      role: open-elevation
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: backend
+        role: open-elevation
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: frontend-open-elevation
+        image: openelevation/open-elevation
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: config
+          mountPath: /code/config.ini
+          subPath: config.ini
+        - name: open-elevation-volume
+          mountPath: /code/data
+      volumes:
+      - name: config
+        configMap:
+          name: openelevation-conf
+      - name: open-elevation-volume
+        persistentVolumeClaim:
+          claimName: open-elevation-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-elevation-service
+  labels:
+    tier: backend
+    role: open-elevation
+spec:
+  ports:
+    - port: 8080
+      name: open-elevation
+  selector:
+    tier: backend
+    role: open-elevation

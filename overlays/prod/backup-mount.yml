@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: backup-mount
+  name: backup-mount
+spec:
+  template:
+    spec:
+      volumes:
+        - name: mongo-backup
+          persistentVolumeClaim:
+            claimName: prod-mongo-backup-claim
+        - name: fuseki-backup
+          persistentVolumeClaim:
+            claimName: prod-fuseki-backup-claim

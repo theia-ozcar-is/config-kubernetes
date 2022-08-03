@@ -1,0 +1,143 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: metadata-dataportal
+  labels:
+    tier: backend
+  annotations:
+    traefik.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /api-observation
+        backend:
+          serviceName: backend-portal-service
+          servicePort: data
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: theia-public
+  labels:
+    tier: frontend
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: frontend-portal-service
+          servicePort: web
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: skosmos
+  labels:
+    tier: frontend
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /skosmos/
+        backend:
+          serviceName: skosmos-service
+          servicePort: web
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: fuseki
+  labels:
+    tier: backend
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /fuseki/
+        backend:
+          serviceName: fuseki-service
+          servicePort: jena
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: frontend-variable-association-ingress
+  labels:
+    tier: frontend
+  annotations:
+    prefix: /admin-var-asso
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: "/admin-var-asso/"
+        backend:
+          serviceName: frontend-variable-association-service
+          servicePort: web
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: backend-variable-association-ingress
+  labels:
+    tier: backend
+  annotations:
+    traefik.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /api-association
+        backend:
+          serviceName: backend-variable-association-service
+          servicePort: data
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: json-schema-ingress
+  labels:
+    tier: frontend
+  annotations:
+    prefix: /json-schema
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /json-schema/
+        backend:
+          serviceName: json-schema-service
+          servicePort: web
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: import-module-ingress
+  labels:
+    tier: frontend
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+spec:
+  rules:
+  - host: $(THEIA_URL)
+    http:
+      paths:
+      - path: /data/
+        backend:
+          serviceName: import-module-service
+          servicePort: web

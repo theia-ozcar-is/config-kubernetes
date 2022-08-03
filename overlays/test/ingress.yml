@@ -1,0 +1,6 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: theia-public
+  annotations:
+    url: test-theia.test.local

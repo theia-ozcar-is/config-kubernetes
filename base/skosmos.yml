@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thesaurus-static
+  labels:
+    tier: frontend
+    role: thesaurus-static
+spec:
+  selector:
+    matchLabels:
+      tier: frontend
+      role: thesaurus-static
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: frontend
+        role: thesaurus-static
+    spec:
+      containers:
+      - name: frontend-thesaurus-static
+        image: nginx:1.21-alpine
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: "nginx-static-file-conf"
+          mountPath: "/etc/nginx/conf.d/default.conf"
+          subPath: "nginx.conf"
+        - name: thesaurus-backup
+          mountPath: "/usr/share/nginx/html/"
+      volumes:
+      - name: nginx-static-file-conf
+        configMap:
+          name: "nginx-static-file-conf"
+      - name: thesaurus-backup
+        persistentVolumeClaim:
+          claimName: rdf4j-backup-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thesaurus-static-service
+  labels:
+    tier: frontend
+    role: thesaurus-static
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    tier: frontend
+    role: thesaurus-static
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skosmos
+  labels:
+    tier: frontend
+    role: skosmos
+spec:
+  selector:
+    matchLabels:
+      tier: frontend
+      role: skosmos
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: frontend
+        role: skosmos
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: theia-frontend
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/docker-thirdparty/skosmos:2.13
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: "config"
+          mountPath: "/var/www/html/config.ttl"
+          subPath: "config.ttl"
+      volumes:
+        - name: "config"
+          configMap:
+            name: "skosmos-conf"

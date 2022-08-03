@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metadata-portal
+  labels:
+    tier: backend
+    role: metadata-portal
+spec:
+  selector:
+    matchLabels:
+      tier: backend
+      role: metadata-portal
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: backend
+        role: metadata-portal
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: springboot-metadata-portal
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/backend-metadata-portal:3e7d31ab
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+        - name: app.api_host
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)"
+        - name: keycloak.auth-server-url
+          value: "https://sso.aeris-data.fr/auth"
+        - name: keycloak.resource
+          valueFrom:
+            secretKeyRef:
+              name: secret-keycloak
+              key: "client-id"
+        - name: keycloak.credentials.secret
+          valueFrom:
+            secretKeyRef:
+              name: secret-keycloak
+              key: "secret"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: theia-frontend
+  labels:
+    tier: frontend
+    role: webui
+spec:
+  selector:
+    matchLabels:
+      tier: frontend
+      role: webui
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        tier: frontend
+        role: webui
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: theia-frontend
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/theia-ozcar-ui:17132b3b
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: API_URL
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)/api-observation"

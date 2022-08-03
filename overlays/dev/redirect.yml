@@ -1,0 +1,17 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik-world
+  name: theia-public-redirect
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`test-theia.osug.fr`)
+    services:
+    - name: frontend-portal-service
+      port: 80
+    middlewares:
+      - name: redirect-https
+        permanent: true
+

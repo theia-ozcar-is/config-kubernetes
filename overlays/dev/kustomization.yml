@@ -1,0 +1,10 @@
+namePrefix: dev-
+commonLabels:
+  variant: dev
+commonAnnotations:
+  kubernetes.io/ingress.class: traefik-uga
+bases:
+  - ../../base
+  - redirect.yml
+patches:
+  - ingress2.yml

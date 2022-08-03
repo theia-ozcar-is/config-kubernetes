@@ -1,0 +1,279 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: backend-variable-association-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/api-association`)
+    middlewares:
+    - name: api-association
+      namespace: theia
+    services:
+    - name: backend-variable-association-service
+      port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: api-association
+spec:
+  replacePathRegex:
+    regex: ^/api-association(.*)
+    replacement: $1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: frontend-variable-association-ingress
+  annotations:
+    prefix: /association-ui/
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`$(ASSO_PATH_PREFIX)`)
+    middlewares:
+    - name: front-association-strip-prefix
+      namespace: theia
+    services:
+    - name: frontend-variable-association-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: front-association-strip-prefix
+spec:
+  stripPrefix:
+    prefixes:
+    - "$(ASSO_PATH_PREFIX)"
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sparql
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/sparql`) && Query(`query={name:(?s:.)*}`) && Method(`GET`, `POST`)
+    middlewares:
+    - name: rdf4j-path-replacement
+      namespace: theia
+    services:
+    - name: rdf4j-service
+      port: 8080
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: sparql-strip-prefix
+# spec:
+#   stripPrefix:
+#     prefixes:
+#     - /sparql
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: sparql-add-prefix
+spec:
+  addPrefix:
+    prefix: /rdf4j-server/repositories/theia_ozcar_core
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rdf4j-path-replacement
+spec:
+  replacePathRegex:
+    regex: ^/sparql(.*)
+    replacement: /rdf4j-server/repositories/theia_ozcar_core$1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: import-module-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/data/`)
+    middlewares:
+    - name: data
+      namespace: theia
+    services:
+    - name: import-module-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: data
+spec:
+  stripPrefix:
+    prefixes:
+    - /data/
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: thesaurus-static-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/thesaurus-static/`)
+    middlewares:
+    - name: thesaurus-static
+      namespace: theia
+    services:
+    - name: thesaurus-static-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: thesaurus-static
+spec:
+  stripPrefix:
+    prefixes:
+    - /thesaurus-static/
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: json-schema-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/json-schema/`)
+    middlewares:
+    - name: json-schema
+      namespace: theia
+    services:
+    - name: json-schema-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: json-schema
+spec:
+  stripPrefix:
+    prefixes:
+    - /json-schema/
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: metadata-dataportal
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/api-observation`)
+    middlewares:
+    - name: api-observation
+      namespace: theia
+    services:
+    - name: backend-portal-service
+      port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: api-observation
+spec:
+  replacePathRegex:
+    regex: ^/api-observation(.*)
+    replacement: $1
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: skosmos
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/skosmos/`)
+    middlewares:
+    - name: skosmos
+      namespace: theia
+    services:
+    - name: skosmos-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: skosmos
+spec:
+  stripPrefix:
+    prefixes:
+    - /skosmos/
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: geonetwork-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/geonetwork`)
+    services:
+    - name: geonetwork-service
+      port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: theia-public
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/`)
+    services:
+    - name: frontend-portal-service
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: robots-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/robots.txt`,`/geonetwork/robots.txt`)
+    services:
+      - name: robots-service
+        port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vocbench-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/vocbench3`)
+    services:
+    - name: vocbench-service
+      port: 1979
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: semanticturkey-ingress
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`$(THEIA_URL)`) && PathPrefix(`/semanticturkey`)
+    services:
+    - name: vocbench-service
+      port: 1979

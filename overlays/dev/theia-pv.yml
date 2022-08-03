@@ -1,0 +1,170 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-fuseki
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/fuseki
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-fuseki-backup
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 40Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/fuseki-backup
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-geonetwork
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/geonetwork
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-geonetwork-elastic
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/geonetwork-elastic
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-import-module-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 200Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/theia-import-module-data
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-mongo-dump
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 50Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/theia-mongo-dump
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-vocbench
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  mountOptions:
+  - bg
+  - nolock
+  - noatime
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/vocbench
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-rdf4j
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/theia-rdf4j
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: theia-rdf4j-dump
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /summer-argent-osug-04/theia/dev/theia-rdf4j-dump
+    server: sum-osugdc-nas.ujf-grenoble.fr
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - bg
+    - nolock
+    - noatime
+  volumeMode: Filesystem

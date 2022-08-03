@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-populate
+  namespace: theia
+spec:
+  template:
+    metadata:
+      labels:
+        role: mongo-populate
+    spec:
+      containers:
+      - name: mongo-populate
+        image: mongo:4.0
+        command: ["/bin/sh", "-c"]
+        args: ["apt-get update && apt-get install -y wget && \
+                wget -O /tmp/dump.gz https://nextcloud.osug.fr/index.php/s/QY4K8d2kiNojYZ7/download && \
+                mongorestore --drop --archive='/tmp/dump.gz' --gzip --uri mongodb://prod-mongo"]
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: backup-mount
+  name: backup-mount
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backup-mount
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: backup-mount
+    spec:
+      containers:
+      - image: alpine
+        name: alpine
+        command: ["sleep", "99999"]
+        volumeMounts:
+          - name: mongo-backup
+            mountPath: /backup/mongo
+          - name: thesaurus-backup
+            mountPath: /backup/rdf4j
+      volumes:
+      - name: thesaurus-backup
+        persistentVolumeClaim:
+          claimName: rdf4j-backup-claim
+      - name: mongo-backup
+        persistentVolumeClaim:
+          claimName: mongo-backup-claim

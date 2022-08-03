@@ -1,0 +1,324 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: geonetwork-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  volumeName: theia-geonetwork
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: geonetwork-elasticsearch-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  volumeName: theia-geonetwork-elastic
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    role: geonetwork
+  name: geonetwork
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      role: geonetwork
+  template:
+    metadata:
+      labels:
+        role: geonetwork
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/docker-thirdparty/geonetwork:4.0.2
+        imagePullPolicy: Always
+        name: geonetwork
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            memory: "2Gi"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GEONETWORK_DB_TYPE
+          value: "postgres"
+        - name: GEONETWORK_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "POSTGRES_DB_NAME"
+        - name: GEONETWORK_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "POSTGRES_USER"
+        - name: GEONETWORK_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "POSTGRES_PASSWORD"
+        - name: GEONETWORK_DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "POSTGRES_HOST"
+        - name: GEONETWORK_DB_PORT
+          value: "5432"
+        - name: ES_HOST
+          value: "$(GEONETWORK_ES)"
+        - name: ES_PORT
+          value: "9200"
+        - name: ES_PROTOCOL
+          value: "http"
+        - name: LOG4J_FORMAT_MSG_NO_LOOKUPS
+          value: "true"
+
+        # Beware ! these must be populated according to GN version !
+        # we had some 4.0.1 data in schema.dir, and needed 4.0.2
+        # this must be consistent with versions , so when upgrading, need to copy new files to /catalog-data
+        #  -Dgeonetwork.schema.dir=/catalogue-data/config/schema_plugins \
+        - name: JAVA_OPTS
+          value:  "-Dorg.eclipse.jetty.annotations.AnnotationParser.LEVEL=OFF \
+                  -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true \
+                  -Xms512M -Xss512M -Xmx2G -XX:+UseConcMarkSweepGC \
+                  -Dgeonetwork.resources.dir=/catalogue-data/resources \
+                  -Dgeonetwork.data.dir=/catalogue-data \
+                  -Dgeonetwork.codeList.dir=/catalogue-data/config/codelist \
+                  -Dgeonetwork.indexConfig.dir=/catalogue-data/config/index \
+                  -Dgeonetwork.config.dir=/catalogue-data/config \
+                  -Dgeonetwork.backup.dir=/catalogue-data/backup \
+                  -Dgeonetwork.formatter.dir=/catalogue-data/formatter \
+                  "
+        - name: KB_URL
+          value: "http://$(GEONETWORK_KIBANA):5601"
+        volumeMounts:
+        - name: ca-pemstore
+          mountPath: /etc/ssl/certs/osug-ca.pem
+          subPath: osug-ca.pem
+          readOnly: false
+        - name: geonetwork-volume
+          mountPath: /catalogue-data
+      volumes:
+      - name: ca-pemstore
+        configMap:
+          name: osug-ca
+      - name: geonetwork-volume
+        persistentVolumeClaim:
+          claimName: geonetwork-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    role: geonetwork-elastic
+  name: geonetwork-elastic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: geonetwork-elastic
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        role: geonetwork-elastic
+    spec:
+      containers:
+      - image: elasticsearch:7.9.3
+        name: elasticsearch
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            memory: "2Gi"
+        ports:
+        - containerPort: 9200
+        env:
+        - name: discovery.type
+          value: "single-node"
+        - name: ES_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        volumeMounts:
+          - name: geonetwork-es-volume
+            mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: geonetwork-es-volume
+          persistentVolumeClaim:
+            claimName: geonetwork-elasticsearch-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    role: geonetwork-kibana
+  name: geonetwork-kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: geonetwork-kibana
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        role: geonetwork-kibana
+    spec:
+      containers:
+      - image: kibana:7.9.3
+        name: kibana
+        resources:
+          limits:
+            memory: "2Gi"
+          requests:
+            memory: "1Gi"
+        ports:
+        - containerPort: 5601
+        env:
+         - name: SERVER_NAME
+           value: "kibana"
+         - name: ELASTICSEARCH_HOSTS
+           value: "http://$(GEONETWORK_ES):9200/"
+         - name: SERVER_BASEPATH
+           value: "/geonetwork/dashboards"
+         - name: SERVER_REWRITEBASEPATH
+           value: "false"
+         - name: KIBANA_INDEX
+           value: ".dashboards"
+         - name: XPACK_MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED
+           value: ".true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    role: geonetwork-populate-app
+  name: geonetwork-populate-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: geonetwork-populate-app
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        role: geonetwork-populate-app
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/populate-geonetwork-service:f9a09d98
+        name: geonetwork-populate-app
+        resources:
+          limits:
+            memory: "512Mi"
+          requests:
+            memory: "512Mi"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: RABBITMQ_HOST
+          value: "$(RABBITMQ)"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_USER"
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_PASSWORD"
+        - name: GEONETWORK_HOST
+          value: "http://$(GEONETWORK):8080/geonetwork/srv/api"
+        - name: GEONETWORK_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "GEONETWORK_USER"
+        - name: GEONETWORK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "GEONETWORK_PASSWORD"
+        - name: MONGODB_URL
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geonetwork-elastic-service
+  labels:
+    role: geonetwork-elastic
+spec:
+  ports:
+    - port: 9200
+      name: elastic
+  selector:
+    role: geonetwork-elastic
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geonetwork-service
+  labels:
+    role: geonetwork
+spec:
+  ports:
+  - port: 8080
+    name: geonetwork
+  selector:
+    role: geonetwork
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geonetwork-kibana-service
+  labels:
+    role: geonetwork-kibana
+spec:
+  ports:
+  - port: 5601
+    name: kibana
+  selector:
+    role: geonetwork-kibana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geonetwork-populate-app-service
+  labels:
+    role: geonetwork-populate-app
+spec:
+  ports:
+  - port: 8080
+    name: geonetwork-populate-app
+  selector:
+    role: geonetwork-populate-app
+

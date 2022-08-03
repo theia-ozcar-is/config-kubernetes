@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vocbench
+  labels:
+    tier: frontend
+    role: vocbench
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      tier: frontend
+      role: vocbench
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: frontend
+        role: vocbench
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: theia-frontend
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/docker-thirdparty/vocbench:9.1.0
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            memory: "2Gi"
+        ports:
+        - containerPort: 1979
+        volumeMounts:
+        - name: vocbench-data
+          mountPath: /opt/vocbench3/data
+      volumes:
+        - name: vocbench-data
+          persistentVolumeClaim:
+            claimName: vocbench-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vocbench-service
+  labels:
+    tier: frontend
+    role: vocbench
+spec:
+  ports:
+  - port: 1979
+    name: web
+  selector:
+    tier: frontend
+    role: vocbench
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vocbench-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  volumeName: theia-vocbench

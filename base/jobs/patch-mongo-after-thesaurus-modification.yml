@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: theia
+  name: patch-mongo-after-thesaurus-modification
+spec:
+  template:
+    metadata:
+      labels:
+        role: patch-mongo-after-thesaurus-modification
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers: 
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/patch-mongo-after-thesaurus-update:2293e511
+        name: patch-mongo-after-thesaurus-modification
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+        - name: app.api_host
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)"
+        - name: sparql.endpoint.url
+          value: "http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core"
+        - name: RABBITMQ_HOST
+          value: "$(RABBITMQ)"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_USER"
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_PASSWORD"
+      restartPolicy: Never
+status: {}

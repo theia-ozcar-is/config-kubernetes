@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: koppen-climates
+  labels:
+    tier: backend
+    role: koppen-climates
+spec:
+  selector:
+    matchLabels:
+      tier: backend
+      role: koppen-climates
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: backend
+        role: koppen-climates
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: koppen-climates
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/koppen-climates-enrichment-app:7326ba44
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: koppen-climates-service
+  labels:
+    tier: backend
+    role: koppen-climates
+spec:
+  ports:
+    - port: 8080
+      name: koppen-climates
+  selector:
+    tier: backend
+    role: koppen-climates
+

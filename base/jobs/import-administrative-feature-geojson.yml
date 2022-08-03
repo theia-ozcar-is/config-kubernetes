@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: theia
+  name: import-administrative-feature-geojson
+spec:
+  template:
+    metadata:
+      labels:
+        role: import-administrative-feature-geojson
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers: 
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/import-administrative-features:f9a09d98
+        name: import-administrative-feature-geojson
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+      restartPolicy: Never
+status: {}

@@ -1,0 +1,141 @@
+namespace: theia
+
+commonLabels:
+  app: theia
+
+resources:
+  - deployment-metadata-portal.yml
+  - deployment-variable-association.yml
+  - deployment-json-schema.yml
+  - skosmos.yml
+  - deployment-import-module.yml
+  - rest-countries.yml
+  - ingress2.yml
+    #  - mongo-standalone.yml
+  - mongo-dump.yml
+    #  - jobs/mongo-populate.yml
+    #  - jobs/patch-mongo-after-thesaurus-modification.yml
+    #  - jobs/import-administrative-feature-geojson.ym
+    #  - jobs/variable-categories-collection-populate.yml
+  - service.yml
+  - deployment-geonetwork-standalone.yml
+  - open-elevation.yml
+  - backup-mount.yml
+  - koppen-climates.yml
+  - rabbit-mq.yml
+  - rdf4j.yml
+  - vocbench.yml
+
+configMapGenerator:
+- name: skosmos-conf
+  files:
+    - configs/skosmos/config.ttl
+- name: apache-virtualhost-conf
+  files:
+    - configs/import-module/apache/virtualhost.conf
+- name: apache-htpasswd
+  files:
+    - configs/import-module/apache/.htpasswd
+- name: msmtp-conf
+  files:
+    - configs/import-module/msmtp/msmtprc
+- name: osug-ca
+  files:
+    - configs/osug-ca.pem
+- name: nginx-static-file-conf
+  files:
+    - configs/json-schema/nginx.conf
+- name: openelevation-conf
+  files:
+    - configs/openelevation/config.ini
+- name: cacerts-for-scanr-conf
+  files:
+    - configs/import-module/scanr-pem/cacerts
+    
+vars:
+  - name: JSON_SCHEMA
+    objref:
+      kind: Service
+      name: json-schema-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: GEONETWORK
+    objref:
+      kind: Service
+      name: geonetwork-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: GEONETWORK_ES
+    objref:
+      kind: Service
+      name: geonetwork-elastic-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: GEONETWORK_KIBANA
+    objref:
+      kind: Service
+      name: geonetwork-kibana-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: THEIA_SCHEME
+    objref:
+      kind: IngressRoute
+      name: theia-public
+      apiVersion: traefik.containo.us/v1alpha1
+    fieldref:
+      fieldpath: metadata.annotations.scheme
+  - name: THEIA_URL
+    objref:
+      kind: IngressRoute
+      name: theia-public
+      apiVersion: traefik.containo.us/v1alpha1
+    fieldref:
+      fieldpath: metadata.annotations.url
+  - name: ASSO_PATH_PREFIX
+    objref:
+      kind: IngressRoute
+      name: frontend-variable-association-ingress
+      apiVersion: traefik.containo.us/v1alpha1
+    fieldref:
+      fieldpath: metadata.annotations.prefix
+  - name: RESTCOUNTRIES_SERVICE
+    objref:
+      kind: Service
+      name: rest-countries-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: OPENELEVATION_SERVICE
+    objref:
+      kind: Service
+      name: open-elevation-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: KOPPENCLIMATES_SERVICE
+    objref:
+      kind: Service
+      name: koppen-climates-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: RABBITMQ
+    objref:
+      kind: Service
+      name: rabbit-mq-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+  - name: RDF4J
+    objref:
+      kind: Service
+      name: rdf4j-service
+      apiVersion: v1
+    fieldref:
+      fieldpath: metadata.name
+configurations:
+- config.yml

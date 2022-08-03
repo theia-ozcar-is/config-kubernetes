@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: theia
+  name: variable-categories-collection-populate
+spec:
+  template:
+    metadata:
+      labels:
+        role: variable-categories-collection-populate
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      restartPolicy: Never
+      containers: 
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/variable-categories-collection-populate:2293e511
+        name: variable-categories-collection-populate
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+        - name: sparql.endpoint.url
+          value: "http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core"

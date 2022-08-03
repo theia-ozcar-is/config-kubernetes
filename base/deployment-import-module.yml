@@ -1,0 +1,119 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: import-module-data-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  volumeMode: Filesystem
+  volumeName: theia-import-module-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    role: import-module
+    tier: frontend
+  name: import-module
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      role: import-module
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        role: import-module
+        tier: frontend
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/import-metadata-service:feaa106c
+        name: import-metadata-service
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: MONGODB_URL
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+        - name: FUSEKI_SPARQL_ENDPOINT
+          value: "http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core"
+        - name: JSON_SCHEMA_URL
+          value: "http://$(JSON_SCHEMA)/"
+        - name: RESTCOUNTRIES_API_URL
+          value: "http://$(RESTCOUNTRIES_SERVICE):8080"
+          # value: "https://restcountries.com"
+        - name: OPENELEVATION_API_URL
+          value: "http://$(OPENELEVATION_SERVICE):8080"
+          # value: "https://api.open-elevation.com/"
+        - name: KOPPENCLIMATES_API_URL
+          value: "http://$(KOPPENCLIMATES_SERVICE):8080"
+        - name: RABBITMQ_HOST
+          value: "$(RABBITMQ)"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_USER"
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_PASSWORD"
+        - name: LOG_LEVEL  # root loglevel. info is the default loglevel ...
+          value: "INFO"
+        volumeMounts:
+        - name: "apache-site-available"
+          mountPath: "/etc/apache2/sites-available/000-default.conf"
+          subPath: "virtualhost.conf"
+        - name: "msmtprc"
+          mountPath: "/etc/msmtprc"
+          subPath: "msmtprc"
+          # until https://github.com/dataesr/scanr/issues/207 is resolved
+        - name: "cacerts-for-scanr-conf"
+          mountPath: "/usr/lib/jvm/java-11-openjdk-amd64/lib/security/cacerts"
+          subPath: "cacerts"
+        - name: "data"
+          mountPath: "/var/www"
+        - name: "producer-secret-file"
+          mountPath: "/home"
+          readOnly: true
+#        resources:
+#          limits:
+#            memory: "1Gi"
+      volumes:
+      - name: apache-site-available
+        configMap:
+          name: "apache-virtualhost-conf"
+      - name: apache-htpasswd
+        configMap:
+          name: "apache-htpasswd"
+      - name: msmtprc
+        configMap:
+          name: "msmtp-conf"
+      - name: cacerts-for-scanr-conf
+        configMap:
+          name: "cacerts-for-scanr-conf"
+      - name: data
+        persistentVolumeClaim:
+          claimName: import-module-data-claim
+      - name: producer-secret-file
+        secret:
+          secretName: producer-secret
+          items:
+          - key: producer_password
+            path: prod.pwd

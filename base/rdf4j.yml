@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdf4j
+  labels:
+    tier: backend
+    role: rdf4j
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      tier: backend
+      role: rdf4j
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: backend
+        role: rdf4j
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: rdf4j
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/docker-thirdparty/rdf4j:3.7.4
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "2Gi"
+          requests:
+            memory: "1Gi"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: rdf4j-data
+          mountPath: /var/rdf4j
+      volumes:
+        - name: rdf4j-data
+          persistentVolumeClaim:
+            claimName: rdf4j-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rdf4j-service
+  labels:
+    tier: backend
+    role: rdf4j
+spec:
+  ports:
+  - port: 8080
+    name: rdf4j
+  selector:
+    tier: backend
+    role: rdf4j
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: rdf4j-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  volumeName: theia-rdf4j
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: rdf4j-backup-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  volumeName: theia-rdf4j-dump
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: rdf4j-dump
+  namespace: theia
+spec:
+  schedule: "00 02 * * * "
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            role: rdf4j-dump
+        spec:
+          containers:
+          - name: rdf4j-dump
+            image: alpine
+            command: ["/bin/sh", "-c"]
+            args: ["wget -O /backup/theia-ozcar-thesaurus.ttl --header='Accept: text/turtle' http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core/statements; wget -O /backup/theia-ozcar-thesaurus.xml --header='Accept: application/rdf+xml' http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core/statements; "]
+            volumeMounts:
+            - name: thesaurus-backup
+              mountPath: /backup/
+          volumes:
+          - name: thesaurus-backup
+            persistentVolumeClaim:
+              claimName: rdf4j-backup-claim
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1000

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robots-deployment
+  labels:
+    role: robots
+spec:
+  selector:
+    matchLabels:
+      role: robots
+  template:
+    metadata:
+      labels:
+        role: robots
+    spec:
+      containers:
+        - image: wikiwi/robots-disallow
+          name: robots
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robots-service
+spec:
+  ports:
+    - port: 8080
+  selector:
+    role: robots

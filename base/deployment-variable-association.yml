@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-variable-association
+  labels:
+    tier: backend
+    role: backend-variable-association
+spec:
+  selector:
+    matchLabels:
+      tier: backend
+      role: backend-variable-association
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: backend
+        role: backend-variable-association
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: backend-springboot-variable-association
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/backend-springboot/backend-association-variable:2293e511
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        - containerPort: 80
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            secretKeyRef:
+              name: secret-mongo
+              key: "uri"
+        - name: app.api_host
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)"
+        - name: sparql.endpoint.url
+          value: "http://$(RDF4J):8080/rdf4j-server/repositories/theia_ozcar_core"
+        - name: app.admin.user
+          valueFrom:
+            secretKeyRef:
+              name: secret-theia-admin
+              key: "THEIA_ASSOCIATION_ADMIN"
+        - name: app.admin.password
+          valueFrom:
+            secretKeyRef:
+              name: secret-theia-admin
+              key: "THEIA_ASSOCIATION_PASSWORD"
+        - name: GEONETWORK_HOST
+          value: "http://$(GEONETWORK):8080/geonetwork/srv/api"
+        - name: GEONETWORK_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "GEONETWORK_USER"
+        - name: GEONETWORK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-geonetwork
+              key: "GEONETWORK_PASSWORD"
+        - name: JSON_SCHEMA_URL
+          value: "http://$(JSON_SCHEMA)/"
+        - name: RABBITMQ_HOST
+          value: "$(RABBITMQ)"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_USER"
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-rabbitmq
+              key: "RABBITMQ_PASSWORD"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-variable-association
+  labels:
+    tier: frontend
+    role: frontend-variable-association
+spec:
+  selector:
+    matchLabels:
+      tier: frontend
+      role: frontend-variable-association
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        tier: frontend
+        role: frontend-variable-association
+    spec:
+      imagePullSecrets:
+      - name: theia-group-registry
+      containers:
+      - name: frontend-variable-association
+        image: gricad-registry.univ-grenoble-alpes.fr/theia-ozcar/variable-association-ui:7b09d46e
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: API_URL
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)/api-association"
+        - name: THEIA_URL
+          value: "$(THEIA_SCHEME)://$(THEIA_URL)"
+        - name: PATH_PREFIX
+          value: $(ASSO_PATH_PREFIX)

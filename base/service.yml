@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-portal-service
+  labels:
+    tier: frontend
+    role: webui
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    tier: frontend
+    role: webui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-portal-service
+  labels:
+    tier: backend
+    role: metadata-portal
+spec:
+  ports:
+  - port: 8080
+    name: data
+  selector:
+    tier: backend
+    role: metadata-portal
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    role: frontend-variable-association
+    tier: frontend
+  name: frontend-variable-association-service
+spec:
+  ports:
+  - port: 80
+    name: web
+    protocol: TCP
+    targetPort: 80
+  selector:
+    role: frontend-variable-association
+    tier: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-variable-association-service
+  labels:
+    tier: backend
+    role: backend-variable-association
+spec:
+  ports:
+  - port: 8080
+    name: data
+  selector:
+    tier: backend
+    role: backend-variable-association
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: import-module-service
+  labels:
+    tier: frontend
+    role: import-module
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    tier: frontend
+    role: import-module
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: json-schema-service
+  labels:
+    tier: frontend
+    role: json-schema
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    tier: frontend
+    role: json-schema
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skosmos-service
+  labels:
+    tier: frontend
+    role: skosmos
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    tier: frontend
+    role: skosmos

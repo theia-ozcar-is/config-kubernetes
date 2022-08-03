@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vocbench
+  labels:
+    tier: frontend
+    role: vocbench
+spec:
+  template:
+    spec:
+      containers:
+        volumeMounts:
+        - name: "vocbench-data"
+          mountPath: "/opt/vocbench3/data"
+      volumes:
+      - name: vocbench-data
+        persistentVolumeClaim:
+          claimName: vocbench-data-claim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vocbench-data-claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeMode: Filesystem
+  volumeName: theia-vocbench
